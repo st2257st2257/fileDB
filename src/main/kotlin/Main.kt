@@ -232,11 +232,11 @@ class FileDB(fileName: String) {
     fun get(index: Int): NodeString{
         return _nodeStringList[index]
     }
-
+/*
     fun getByID(ID : Int): NodeString? {
         return _nodeStringList.firstOrNull{it.index == ID}
     }
-
+*/
     fun addDataString( values : List<Double> ) {
         val nodeString       = NodeString()
         nodeString.strNumber = _nodeStringList.size
@@ -320,33 +320,42 @@ class FileDB(fileName: String) {
         return strList
     }
 
-    fun addFile( newFileDB: FileDB, key: Int ) {
+    private fun setStructure(header: List<String>) {
+        _nodeStringList.clear()
+        val nodeString      = NodeString()
+        header.forEach { h->
+            val node        = Node()
+            node.type       = NodeType.TITLE
+            node.sValue     = h
+            nodeString.nodes.add(node)
+        }
+        _nodeStringList.add(nodeString)
+    }
+
+    fun addFile( newFileDB: FileDB, key: Int = 0) {
         val newRecordNumber = newFileDB.getRecordNumber()
         val newFileDBHeader = newFileDB.getStructure()
         if( newFileDBHeader.isEmpty() || newRecordNumber == 0 ) // nothing to copy
             return
         if( _nodeStringList.size == 0 ) { // copy
+            setStructure( newFileDBHeader )
             for( i in key..newRecordNumber ) {
                 val newStr = newFileDB.getStringByIndex( i )?.nodes?.map{ it.dValue }
-                addDataString(newStr!!)
+                if( newStr != null )
+                    addDataString(newStr)
             }
             writeFile()
             return
         }
-        if( _nodeStringList[0].nodes.size != newFileDBHeader.size ) // structures have to be the same
-            return
-        for( i in newFileDBHeader.indices)
-            if( _nodeStringList[0].nodes[i].sValue != newFileDBHeader[i]) // structures have to be the same
-                return
-        for( i in key until newRecordNumber ) {
+        val newRecordNumber0 = newFileDB.getRecordNumber()
+        for( i in key..newRecordNumber0 ) {
             val newStr = newFileDB.getStringByIndex( i )?.nodes?.map{ it.dValue }
-            addDataString(newStr!!)
+            if( newStr != null )
+                addDataString(newStr)
         }
         writeFile()
     }
-
 }
-
 
 fun testDB() {
 
@@ -391,12 +400,12 @@ fun testDB() {
 
     // The ability to stitch strings from two different files by key (join operation).
     val fileDB2 = FileDB("C:\\sqlite\\test_data_2.txt")
-    fileDB.parseFile()
-    fileDB.readFileByStructure()
+    fileDB2.parseFile()
+    fileDB2.readFileByStructure()
 
-    fileDB.addFile(fileDB2, 5)
-
+    fileDB.addFile(fileDB2, 8)
 }
+
 fun main(args: Array<String>) {
     println("Hello World!")
     testDB()
